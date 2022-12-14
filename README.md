@@ -1,0 +1,1 @@
+Приложение с использованием PyQT5, QtDesigner, PostgreSQL
