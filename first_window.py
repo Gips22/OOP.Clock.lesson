@@ -5,6 +5,7 @@ from create import MyMainWindow
 
 
 class Ui_Dialog(object):
+    """Класс сгенерированный QTDesigner. Стартовое окно 'Журнал работ'"""
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(500, 402)
@@ -26,7 +27,6 @@ class Ui_Dialog(object):
         self.label_2 = QtWidgets.QLabel(Dialog)
         self.label_2.setGeometry(QtCore.QRect(290, 160, 201, 191))
         self.label_2.setStyleSheet("background-image: url(:/newPrefix/1.jpg);")
-
         self.label_2.setText("")
         self.label_2.setPixmap(QtGui.QPixmap("C:\\Users\\naletovaa\\Desktop\\PROJECTS\\QT_journal\\1.jpg"))
         self.label_2.setScaledContents(True)
@@ -50,7 +50,6 @@ class Ui_Dialog(object):
         self.pushButton_3.setFont(font)
         self.pushButton_3.setStyleSheet("background-color: rgb(0, 170, 255);")
         self.pushButton_3.setObjectName("pushButton_3")
-
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
@@ -69,7 +68,11 @@ class Ui_Dialog(object):
 
 
 class MyFirstWindow(QtWidgets.QWidget, Ui_Dialog):
+    """Мой вспомогательный класс, для дополнения родительского класса Ui_Dialog"""
+
     def __init__(self):
+        """В конструкторе инициализуем setupUi родительского класса,
+         а также определяем события нажатия на кнопки"""
         super().__init__()
         self.setupUi(self)
 
@@ -77,11 +80,15 @@ class MyFirstWindow(QtWidgets.QWidget, Ui_Dialog):
         self.pushButton_2.clicked.connect(self.openAddNoteWindow)
 
     def openMainWindow(self):
+        """Метод, который срабатывает при нажатии на кнопку 'Создать запись'.
+        В нем создаем ЭК, отвечающего за отображение окна create.py и далее работаем уже с ним"""
         self.close()
-        self.ui = MyMainWindow(parent=self)  # предаем ссылку на self чтобы в окне MainWindow не делать импорт из-за которого происходит циклический импорт
-
+        self.ui = MyMainWindow(
+            parent=self)  # предаем ссылку на self чтобы в окне MainWindow не делать импорт из-за которого выдает ошибку циклического импорта
 
     def openAddNoteWindow(self):
+        """Метод, который срабатывает при нажатии на кнопку 'Дополнить запись'.
+        В нем создаем ЭК, отвечающего за отображение окна add_note.py и далее работаем уже с ним"""
         self.close()
         self.ui2 = MyAddWindow(parent=self)
 
@@ -96,4 +103,5 @@ if __name__ == "__main__":
     ui.setupUi(Dialog)
     ui.show()
 
-    sys.exit(app.exec_())  # функция exec запускает loop - цикл отслеживания событий и управления обработчиками событий, пока мы не выйдем из приложения. Когда мы выходим ф-ия возвращает exex код == 0 если успешно вышли, если нет ошибки
+    sys.exit(app.exec_())  # функция exec запускает loop - цикл отслеживания событий и управления обработчиками событий,
+    # пока мы не выйдем из приложения. Когда мы выходим ф-ия возвращает exex код == 0 если успешно вышли, если нет ошибки

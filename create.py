@@ -1,13 +1,14 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-import datetime
 from PyQt5.QtWidgets import QMessageBox
-import psycopg2
 
-
-# from first_window import MyFirstWindow
+import datetime
+from db import connect_to_db
+from typing import Optional
 
 
 class Ui_CreateNote(object):
+    """Класс сгенерированный QTDesigner. Окно 'Создать запись'"""
+
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(551, 763)
@@ -189,7 +190,6 @@ class Ui_CreateNote(object):
         self.dateTimeEdit.raise_()
         self.comboBox_2.raise_()
         self.checkBox_3.raise_()
-
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
@@ -266,7 +266,11 @@ class Ui_CreateNote(object):
 
 
 class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
+    """Мой вспомогательный класс, для дополнения родительского класса Ui_CreateNote"""
+
     def __init__(self, parent):
+        """В конструкторе инициализуем setupUi родительского класса,
+        а также определяем события нажатия на кнопки"""
         super().__init__()
         self.setupUi(self)
         self.parent = parent
@@ -276,25 +280,41 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
         self.pushButton_2.clicked.connect(lambda: self.dateTimeEdit.setDateTime(datetime.datetime.now()))
         self.pushButton_3.clicked.connect(self.back_home)
 
+        self.fio = None
+        self.type1 = None
+        self.type2 = None
+        self.type3 = None
+        self.theme = None
+        self.part = None
+        self.element = None
+        self.time_start = None
+        self.file_start = None
+        self.comments_start = None
+
     def back_home(self):
+        """Метод, который срабатываем при нажатии на кнопку 'Домой'.
+        Закрывает текущее окно и открывает стартовое окно"""
         self.close()
         self.parent.show()
 
     def on_click(self):
-        self.connection = psycopg2.connect(
-            host="127.0.0.1",
-            user="postgres",
-            password="5660126",
-            database="journal_db"
-        )
+        """Метод, который срабатывает при нажатии на кнопку 'Создать'.
+        Делает валидацию введенных данных, проверяет все ли обязательные поля заполнены.
+        Если нет-выдает ошибку. Если все ок - сохраняет запись в БД
+        и показывает модальное окно 'Запись успешно создана'"""
 
-        self.connection.autocommit = True  # чтобы не делать коммиты каждый раз, делаем автокоммит
+        self.connection = connect_to_db()
         self.cursor = self.connection.cursor()
+        self.check_finally_to_db()
 
+    def _check_fio_field(self) -> Optional[str]:
+        """Проверям заполнил ли пользователь обязательное поле 'Ответственный'"""
         self.fio = self.fioBox.currentText()
         if self.fio == "Не выбрано":
             self.fio = None
+        return self.fio
 
+    def _check_type_work_field(self) -> Optional[str]:
         self.type1 = self.checkBox.isChecked()
         self.type2 = self.checkBox_2.isChecked()
         self.type3 = self.checkBox_3.isChecked()
@@ -306,34 +326,47 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
         if self.type3:
             self.type_rezult.append(self.checkBox_3.text())
         self.type_rezult = ', '.join(self.type_rezult)
+        return self.type_rezult
 
-        self.tema = self.comboBox_2.currentText()
-        if self.tema == "Не выбрано":
-            self.tema = None
+    def _check_field_theme_work(self) -> Optional[str]:
+        self.theme = self.comboBox_2.currentText()
+        if self.theme == "Не выбрано":
+            self.theme = None
+        return self.theme
 
-        self.agregat = self.comboBox_3.currentText()
-        if self.agregat == "Не выбрано":
-            self.agregat = None
+    def _check_field_part(self) -> Optional[str]:
+        self.part = self.comboBox_3.currentText()
+        if self.part == "Не выбрано":
+            self.part = None
+        return self.part
 
+    def _check_field_element(self) -> Optional[str]:
         self.element = self.lineEdit_5.text()
         if not self.element:
             self.element = None
+        return self.element
 
+    def _check_field_time_start(self) -> Optional[str]:
         self.time_start = self.dateTimeEdit.dateTime().toString('dd-MM-yyyy hh:mm')
         if self.time_start == "01-01-2000 00:00":
             self.time_start = None
+        return self.time_start
 
+    def _check_field_file_start(self) -> Optional[str]:
         self.file_start = self.lineEdit_4.text()
         if not self.file_start:
             self.file_start = None
+        return self.file_start
 
+    def _check_field_comments_start(self) -> Optional[str]:
         self.comments_start = self.lineEdit_3.text()
         if not self.comments_start:
             self.comments_start = None
+        return self.comments_start
 
-        ######
+    def check_finally_to_db(self):
         if any(x == None for x in
-               (self.fio, self.type_rezult, self.tema, self.agregat, self.time_start, self.file_start)):
+               (self._check_fio_field(), self._check_type_work_field(), self._check_field_theme_work(), self._check_field_part(), self._check_field_time_start(), self._check_field_file_start())):
             """В случае если не заполнено какое-то поле- выдаем окно с ошибкой"""
 
             msg = QMessageBox()
@@ -348,7 +381,7 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
                 self.insert_data = (
                     "insert into works (id, fio, type, tema, agregat, element, time, link_start, comment_start) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)")
                 self.cursor.execute(self.insert_data,
-                                    (10, self.fio, self.type_rezult, self.tema, self.agregat, self.element,
+                                    (12, self.fio, self.type_rezult, self.theme, self.part, self.element,
                                      self.time_start,
                                      self.file_start,
                                      self.comments_start))
@@ -365,7 +398,6 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
                 msg1.setText('Запись успешно создана!')
                 msg1.setIcon(QMessageBox.Information)
                 x = msg1.exec_()
-
 
 
 def main():
