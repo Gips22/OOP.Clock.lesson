@@ -2,8 +2,10 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
 import datetime
-from db import connect_to_db
+from db import get_cursor
 from typing import Optional
+
+from messages import create_error, create_unknown_error, create_note_success
 
 
 class Ui_CreateNote(object):
@@ -303,9 +305,35 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
         Если нет-выдает ошибку. Если все ок - сохраняет запись в БД
         и показывает модальное окно 'Запись успешно создана'"""
 
-        self.connection = connect_to_db()
-        self.cursor = self.connection.cursor()
+
+        self.cursor = get_cursor()
         self.check_finally_to_db()
+
+    def check_finally_to_db(self):
+        """Функция финально проверяет заполненность всех обязательных полей и сохраняет в БД,
+        если все заполнено. Если нет - выдает модальное окно с ошибкой, в зависимости от ее типа"""
+
+        if any(x == None for x in
+               (self._check_fio_field(), self._check_type_work_field(), self._check_field_theme_work(),
+                self._check_field_part(), self._check_field_time_start(), self._check_field_file_start())):
+            return create_error()
+
+        try:
+            self.insert_data = (
+                "insert into works "
+                "(id, fio, type, tema, agregat, element, time, link_start, comment_start) "
+                "values (%s, %s, %s, %s, %s, %s, %s, %s, %s)")
+            self.cursor.execute(self.insert_data,
+                                (13, self.fio, self.type_rezult, self.theme, self.part, self.element,
+                                 self.time_start,
+                                 self.file_start,
+                                 self.comments_start))
+
+        except Exception as ex:
+            create_unknown_error(ex)
+
+        else:
+            create_note_success()
 
     def _check_fio_field(self) -> Optional[str]:
         """Проверям заполнил ли пользователь обязательное поле 'Ответственный'"""
@@ -315,6 +343,7 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
         return self.fio
 
     def _check_type_work_field(self) -> Optional[str]:
+        """Проверям заполнил ли пользователь обязательное поле 'Тип работ'"""
         self.type1 = self.checkBox.isChecked()
         self.type2 = self.checkBox_2.isChecked()
         self.type3 = self.checkBox_3.isChecked()
@@ -329,78 +358,43 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
         return self.type_rezult
 
     def _check_field_theme_work(self) -> Optional[str]:
+        """Проверям заполнил ли пользователь обязательное поле 'Тема'"""
         self.theme = self.comboBox_2.currentText()
         if self.theme == "Не выбрано":
             self.theme = None
         return self.theme
 
     def _check_field_part(self) -> Optional[str]:
+        """Проверям заполнил ли пользователь обязательное поле 'Часть'"""
         self.part = self.comboBox_3.currentText()
         if self.part == "Не выбрано":
             self.part = None
         return self.part
 
     def _check_field_element(self) -> Optional[str]:
+        """Проверям заполнил ли пользователь необязательное поле 'Элемент'"""
         self.element = self.lineEdit_5.text()
         if not self.element:
             self.element = None
         return self.element
 
     def _check_field_time_start(self) -> Optional[str]:
+        """Проверям заполнил ли пользователь обязательное поле 'Время старта работ'"""
         self.time_start = self.dateTimeEdit.dateTime().toString('dd-MM-yyyy hh:mm')
         if self.time_start == "01-01-2000 00:00":
             self.time_start = None
         return self.time_start
 
     def _check_field_file_start(self) -> Optional[str]:
+        """Проверям заполнил ли пользователь обязательное поле 'Ссылка на файл'"""
         self.file_start = self.lineEdit_4.text()
         if not self.file_start:
             self.file_start = None
         return self.file_start
 
     def _check_field_comments_start(self) -> Optional[str]:
+        """Проверям заполнил ли пользователь обязательное поле 'Комментарий'"""
         self.comments_start = self.lineEdit_3.text()
         if not self.comments_start:
             self.comments_start = None
         return self.comments_start
-
-    def check_finally_to_db(self):
-        if any(x == None for x in
-               (self._check_fio_field(), self._check_type_work_field(), self._check_field_theme_work(), self._check_field_part(), self._check_field_time_start(), self._check_field_file_start())):
-            """В случае если не заполнено какое-то поле- выдаем окно с ошибкой"""
-
-            msg = QMessageBox()
-            msg.setWindowTitle('Предупреждение')
-            msg.setText("Вы не заполнили некоторые обязательные поля")
-            msg.setIcon(QMessageBox.Warning)
-
-            x = msg.exec_()
-
-        else:
-            try:
-                self.insert_data = (
-                    "insert into works (id, fio, type, tema, agregat, element, time, link_start, comment_start) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)")
-                self.cursor.execute(self.insert_data,
-                                    (12, self.fio, self.type_rezult, self.theme, self.part, self.element,
-                                     self.time_start,
-                                     self.file_start,
-                                     self.comments_start))
-            except Exception as ex:
-                msg1 = QMessageBox()
-                msg1.setWindowTitle('Ошибка')
-                msg1.setText(str(ex))
-                msg1.setIcon(QMessageBox.Critical)
-                x = msg1.exec_()
-
-            else:
-                msg1 = QMessageBox()
-                msg1.setWindowTitle('Выполнено')
-                msg1.setText('Запись успешно создана!')
-                msg1.setIcon(QMessageBox.Information)
-                x = msg1.exec_()
-
-
-def main():
-    w1 = MyMainWindow()
-    w1.show()
-    w1.exec_()

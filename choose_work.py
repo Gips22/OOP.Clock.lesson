@@ -5,6 +5,9 @@ import db
 
 
 class Ui_choose_work(object):
+    """Класс сгенерированный QTDesigner. Окно  с записями за выбранную дату.
+    Класс, определяющий логику - ниже"""
+
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(575, 577)
@@ -87,8 +90,8 @@ class Ui_choose_work(object):
         font.setWeight(75)
         self.pushButton_4.setFont(font)
         self.pushButton_4.setStyleSheet("background-color: rgb(153, 229, 0);\n"
-"background-color: rgb(0, 170, 255);\n"
-"color: rgb(255, 255, 255);")
+                                        "background-color: rgb(0, 170, 255);\n"
+                                        "color: rgb(255, 255, 255);")
         self.pushButton_4.setObjectName("pushButton_4")
 
         self.retranslateUi(Dialog)
@@ -127,7 +130,11 @@ class Ui_choose_work(object):
 
 
 class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
+    """Мой вспомогательный класс, для дополнения логики работы родительского класса Ui_choose_work"""
+
     def __init__(self, date_choose=None):
+        """В конструкторе инициализуем setupUi родительского класса,
+        а также определяем события нажатия на кнопки"""
         super().__init__()
         self.date_choose = date_choose
         self.setupUi(self)
@@ -138,7 +145,8 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
 
     def create_windgets(self):
         """Тут создаем виджеты в ячейках с datetime, а также создаем в цикле атрибуты, чтобы
-                в дальнейшем можно было обращаться к ним для сохранения в БД"""
+        в дальнейшем можно было обращаться к ним для сохранения в БД"""
+
         column = 0
         self.time_list = []  # список с атрибутами row time
         for i in range(self.tableWidget_2.columnCount()):
@@ -149,13 +157,15 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
         self.loadData()  # вызываем метод для работы с БД именно отсюда, а не из __init__, так как иначе данные не загрузятся в таблицу
 
     def loadData(self):
-        cursor = db.get_cursor()
+        """Задаем размерность таблиц, исхотя из объема записей за дату
+         + заполняем данными таблицу 1"""
 
+        cursor = db.get_cursor()
         query = f"select * from works where time >= '{self.date_choose} 00:00:00' and time <= '{self.date_choose} 23:59:59' and time_finish is null;"
         cursor.execute(query)
         self.rez = cursor.fetchall()
-        self.tableWidget.setColumnCount(len(self.rez))
-        self.tableWidget_2.setColumnCount(len(self.rez))
+        self.tableWidget.setColumnCount(len(self.rez))  # устанавливаем количество полей для таблицы1
+        self.tableWidget_2.setColumnCount(len(self.rez)) # устанавливаем количество полей для таблицы2
 
         tablecol = 0
         try:
@@ -172,6 +182,7 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
             print(ex)
 
     def insertData(self):
+        """Вставляем данные в таблицу 2 после нажатия на кнопку 'Сохранить'"""
         cursor = db.get_cursor()
         column = self.tableWidget_2.columnCount()
 
@@ -180,7 +191,7 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
         self.comment_list = [self.tableWidget_2.item(2, col).text() if self.tableWidget_2.item(2, col) != None else None
                              for col in range(column)]
 
-        """Проверка на заполненность всех обязательных полей хотя бы в одной записе"""
+        # Проверка на заполненность всех обязательных полей хотя бы в одной записе
         Flag = False
         for i in range(self.tableWidget_2.columnCount()):
             if int(self.time_list[i].dateTime().toString('dd-MM-yyyy hh:mm')[6:10]) < 2022 or not self.link_list[i]:
@@ -190,14 +201,16 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
         if not Flag:
             warning_window()
 
-        """После того, как мы нашли хотя бы 1 запись в полностью заполненными полями, проверяем какую именно и сохраняем результат в БД"""
+        # После того, как мы нашли хотя бы 1 запись в полностью заполненными полями,
+        # проверяем какую именно и сохраняем результат в БД
         for i in range(self.tableWidget_2.columnCount()):
             if int(self.time_list[i].dateTime().toString('dd-MM-yyyy hh:mm')[6:10]) < 2022 or not self.link_list[i]:
                 continue
             else:
                 if self.comment_list[i]:
                     try:
-                        query_insert_time = "update works set time_finish = %s, link_finish = %s, comment_finish = %s  where id = %s;"
+                        query_insert_time = "update works set time_finish = %s, " \
+                                            "link_finish = %s, comment_finish = %s  where id = %s;"
                         cursor.execute(query_insert_time, (
                             self.time_list[i].dateTime().toString('dd-MM-yyyy hh:mm'), self.link_list[i],
                             self.comment_list[i], self.rez[i][0]))
@@ -206,10 +219,10 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
                     else:
                         complete_success()
                         self.close()
-
                 else:
                     try:
-                        query_insert_time = "update works set time_finish = %s, link_finish = %s where id = %s;"
+                        query_insert_time = "update works set time_finish = %s, " \
+                                            "link_finish = %s where id = %s;"
                         cursor.execute(query_insert_time, (
                             self.time_list[i].dateTime().toString('dd-MM-yyyy hh:mm'), self.link_list[i],
                             self.rez[i][0]))
@@ -218,10 +231,3 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
                     else:
                         complete_success()
                         self.close()
-
-# def main():
-#     Dialog = QtWidgets.QDialog()
-#     ui = Ui_choose_work()
-#     ui.setupUi(Dialog)
-#     Dialog.show()
-#     sys.exit(app.exec_())
