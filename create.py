@@ -1,10 +1,10 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QMessageBox
-
+"""Окно создания новой записи в БД"""
 import datetime
-from db import get_cursor
 from typing import Optional
 
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+from db import get_cursor
 from messages import create_error, create_unknown_error, create_note_success
 
 
@@ -304,15 +304,12 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
         Делает валидацию введенных данных, проверяет все ли обязательные поля заполнены.
         Если нет-выдает ошибку. Если все ок - сохраняет запись в БД
         и показывает модальное окно 'Запись успешно создана'"""
-
-
         self.cursor = get_cursor()
         self.check_finally_to_db()
 
     def check_finally_to_db(self):
         """Функция финально проверяет заполненность всех обязательных полей и сохраняет в БД,
         если все заполнено. Если нет - выдает модальное окно с ошибкой, в зависимости от ее типа"""
-
         if any(x == None for x in
                (self._check_fio_field(), self._check_type_work_field(), self._check_field_theme_work(),
                 self._check_field_part(), self._check_field_time_start(), self._check_field_file_start())):
@@ -320,18 +317,16 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
 
         try:
             self.insert_data = (
-                "insert into works "
-                "(id, fio, type, tema, agregat, element, time, link_start, comment_start) "
-                "values (%s, %s, %s, %s, %s, %s, %s, %s, %s)")
+                "insert into workss "
+                "(fio, type, tema, part, element, time, link_start, comment_start) "
+                "values (%s, %s, %s, %s, %s, %s, %s, %s)")
             self.cursor.execute(self.insert_data,
-                                (13, self.fio, self.type_rezult, self.theme, self.part, self.element,
+                                (self.fio, self.type_rezult, self.theme, self.part, self.element,
                                  self.time_start,
                                  self.file_start,
                                  self.comments_start))
-
         except Exception as ex:
             create_unknown_error(ex)
-
         else:
             create_note_success()
 

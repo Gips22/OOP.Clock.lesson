@@ -1,4 +1,11 @@
-host = "127.0.0.1"
-user = "postgres"
-password = "5660126"
-db_name = "journal_db"
+"""Все приватные переменные заданы тут. При подключении к проекту - создать файл .env,
+внести его в .gitignore и задать там переменные окружения"""
+
+import os
+
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+PASSWORD = os.getenv("PASSWORD")

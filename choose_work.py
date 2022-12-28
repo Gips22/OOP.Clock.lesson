@@ -1,13 +1,12 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from messages import *
+from messages import warning_window, error_message, complete_success
 import db
 
 
 class Ui_choose_work(object):
     """Класс сгенерированный QTDesigner. Окно  с записями за выбранную дату.
     Класс, определяющий логику - ниже"""
-
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(575, 577)
@@ -131,7 +130,6 @@ class Ui_choose_work(object):
 
 class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
     """Мой вспомогательный класс, для дополнения логики работы родительского класса Ui_choose_work"""
-
     def __init__(self, date_choose=None):
         """В конструкторе инициализуем setupUi родительского класса,
         а также определяем события нажатия на кнопки"""
@@ -146,7 +144,6 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
     def create_windgets(self):
         """Тут создаем виджеты в ячейках с datetime, а также создаем в цикле атрибуты, чтобы
         в дальнейшем можно было обращаться к ним для сохранения в БД"""
-
         column = 0
         self.time_list = []  # список с атрибутами row time
         for i in range(self.tableWidget_2.columnCount()):
@@ -159,13 +156,12 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
     def loadData(self):
         """Задаем размерность таблиц, исхотя из объема записей за дату
          + заполняем данными таблицу 1"""
-
         cursor = db.get_cursor()
         query = f"select * from works where time >= '{self.date_choose} 00:00:00' and time <= '{self.date_choose} 23:59:59' and time_finish is null;"
         cursor.execute(query)
         self.rez = cursor.fetchall()
         self.tableWidget.setColumnCount(len(self.rez))  # устанавливаем количество полей для таблицы1
-        self.tableWidget_2.setColumnCount(len(self.rez)) # устанавливаем количество полей для таблицы2
+        self.tableWidget_2.setColumnCount(len(self.rez))  # устанавливаем количество полей для таблицы2
 
         tablecol = 0
         try:

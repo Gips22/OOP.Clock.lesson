@@ -1,3 +1,4 @@
+"""Главное (первое) окно. Запускаем его для старта программы"""
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from add_note import MyAddWindow
