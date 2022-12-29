@@ -1,7 +1,12 @@
+"""Окно с таблицой записей за период и возможостью добавить новые данные, сохраняет их в БД"""
 from PyQt5 import QtCore, QtGui, QtWidgets
+from loguru import logger
 
 from messages import warning_window, error_message, complete_success
-import db
+from db import get_cursor
+
+
+logger.add("debug.log", format="{time} {level} {message}", level="DEBUG", rotation="10 MB")
 
 
 class Ui_choose_work(object):
@@ -156,7 +161,7 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
     def loadData(self):
         """Задаем размерность таблиц, исхотя из объема записей за дату
          + заполняем данными таблицу 1"""
-        cursor = db.get_cursor()
+        cursor = get_cursor()
         query = f"select * from works where time >= '{self.date_choose} 00:00:00' and time <= '{self.date_choose} 23:59:59' and time_finish is null;"
         cursor.execute(query)
         self.rez = cursor.fetchall()
@@ -175,11 +180,11 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
                 self.tableWidget.setItem(6, tablecol, QtWidgets.QTableWidgetItem(str(row[6])))
                 tablecol += 1
         except Exception as ex:
-            print(ex)
+            logger.info(ex)
 
     def insertData(self):
         """Вставляем данные в таблицу 2 после нажатия на кнопку 'Сохранить'"""
-        cursor = db.get_cursor()
+        cursor = get_cursor()
         column = self.tableWidget_2.columnCount()
 
         self.link_list = [self.tableWidget_2.item(1, col).text() if self.tableWidget_2.item(1, col) != None else None
@@ -211,7 +216,7 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
                             self.time_list[i].dateTime().toString('dd-MM-yyyy hh:mm'), self.link_list[i],
                             self.comment_list[i], self.rez[i][0]))
                     except Exception as ex:
-                        error_message(ex)
+                        logger.error(error_message(ex))
                     else:
                         complete_success()
                         self.close()
@@ -223,7 +228,7 @@ class MyChooseWork(QtWidgets.QWidget, Ui_choose_work):
                             self.time_list[i].dateTime().toString('dd-MM-yyyy hh:mm'), self.link_list[i],
                             self.rez[i][0]))
                     except Exception as ex:
-                        error_message(ex)
+                        logger.error(error_message(ex))
                     else:
                         complete_success()
                         self.close()

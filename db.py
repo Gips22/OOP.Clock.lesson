@@ -1,3 +1,4 @@
+"""Модуль подключения, проверки и инициализации БД, также возврает курсор для остальных модулей"""
 from loguru import logger
 import psycopg2
 
@@ -34,7 +35,7 @@ def _init_db():
 def check_db_exist():
     """Проверяет инициализирована ли БД, если нет - инициализирует"""
     try:
-        cursor.execute("select * from workss;")
+        cursor.execute("select * from works;")
     except Exception:
         logger.info("Инициализирую таблицу works")
         _init_db()

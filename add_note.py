@@ -1,13 +1,16 @@
+"""Окно выбора даты, за которую мы хотим посмотреть проведенные работы"""
 from PyQt5 import QtCore, QtGui, QtWidgets
+from loguru import logger
 
 from choose_work import MyChooseWork
 import messages
 from db import get_cursor
 
 
+logger.add("debug.log", format="{time} {level} {message}", level="DEBUG", rotation="10 MB")
+
 class Ui_add_note(object):
     """Класс сгенерированный QTDesigner. Окно 'Дополнить запись'"""
-
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(501, 453)
@@ -65,7 +68,6 @@ class Ui_add_note(object):
 
 class MyAddWindow(QtWidgets.QWidget, Ui_add_note):
     """Мой класс для дополнения родительского класса Ui_add_note"""
-
     def __init__(self, parent):
         """В конструкторе инициализуем setupUi родительского класса,
         а также определяем события для кнопок"""
@@ -87,16 +89,19 @@ class MyAddWindow(QtWidgets.QWidget, Ui_add_note):
          и проверяет были ли записи в выбранную дату.
          Если были - перебрасывает нас на окно с записями choose_work.py,
          если нет - показывает модальное окно с информацией"""
+        try:
+            cursor = get_cursor()
+            date_choose = self.calendarWidget.selectedDate().toString('yyyy-MM-dd')
+            query = f"select * from works where " \
+                    f"time >= '{date_choose} 00:00:00' and " \
+                    f"time <= '{date_choose} 23:59:59' and " \
+                    f"time_finish is null;"
+            cursor.execute(query)
+            rez = cursor.fetchall()
+        except Exception as ex:
+            logger.error(ex)
 
-        cursor = get_cursor()
-        date_choose = self.calendarWidget.selectedDate().toString('yyyy-MM-dd')
-        query = f"select * from works where " \
-                f"time >= '{date_choose} 00:00:00' and " \
-                f"time <= '{date_choose} 23:59:59' and " \
-                f"time_finish is null;"
-        cursor.execute(query)
-        rez = cursor.fetchall()
         if len(rez) == 0:
-            messages.warning_date()
+            logger.info(messages.warning_date())
         else:
             self.ui3 = MyChooseWork(date_choose=date_choose)

@@ -3,14 +3,17 @@ import datetime
 from typing import Optional
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from loguru import logger
 
 from db import get_cursor
 from messages import create_error, create_unknown_error, create_note_success
 
 
+logger.add("debug.log", format="{time} {level} {message}", level="DEBUG", rotation="10 MB")
+
+
 class Ui_CreateNote(object):
     """Класс сгенерированный QTDesigner. Окно 'Создать запись'"""
-
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(551, 763)
@@ -269,7 +272,6 @@ class Ui_CreateNote(object):
 
 class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
     """Мой вспомогательный класс, для дополнения родительского класса Ui_CreateNote"""
-
     def __init__(self, parent):
         """В конструкторе инициализуем setupUi родительского класса,
         а также определяем события нажатия на кнопки"""
@@ -302,7 +304,7 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
     def on_click(self):
         """Метод, который срабатывает при нажатии на кнопку 'Создать'.
         Делает валидацию введенных данных, проверяет все ли обязательные поля заполнены.
-        Если нет-выдает ошибку. Если все ок - сохраняет запись в БД
+        Если нет-выдает ошибку. Если все ок - сохраняет запись в БД (через метод check_finally_to_db)
         и показывает модальное окно 'Запись успешно создана'"""
         self.cursor = get_cursor()
         self.check_finally_to_db()
@@ -316,8 +318,10 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
             return create_error()
 
         try:
+            self._check_field_element()
+            self._check_field_comments_start()
             self.insert_data = (
-                "insert into workss "
+                "insert into works "
                 "(fio, type, tema, part, element, time, link_start, comment_start) "
                 "values (%s, %s, %s, %s, %s, %s, %s, %s)")
             self.cursor.execute(self.insert_data,
@@ -327,8 +331,11 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
                                  self.comments_start))
         except Exception as ex:
             create_unknown_error(ex)
+            logger.error(ex)
         else:
             create_note_success()
+            self.close()
+            self.parent.show()
 
     def _check_fio_field(self) -> Optional[str]:
         """Проверям заполнил ли пользователь обязательное поле 'Ответственный'"""
@@ -342,6 +349,8 @@ class MyMainWindow(QtWidgets.QWidget, Ui_CreateNote):
         self.type1 = self.checkBox.isChecked()
         self.type2 = self.checkBox_2.isChecked()
         self.type3 = self.checkBox_3.isChecked()
+        if not self.type1 and not self.type2 and not self.type3:
+            return None
         self.type_rezult = []
         if self.type1:
             self.type_rezult.append(self.checkBox.text())
